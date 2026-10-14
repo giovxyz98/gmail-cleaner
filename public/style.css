@@ -105,6 +105,8 @@ th {
 .badge.https, .badge.mailto { background: #fff2cc; color: #8a6d00; }
 .badge.none { background: #f0d3d3; color: #a01717; }
 
+[hidden] { display: none !important; }
+
 #modal-overlay {
   position: fixed;
   inset: 0;
