@@ -48,6 +48,14 @@ async function handleCallback(code) {
   const { tokens } = await client.getToken(code);
   client.setCredentials(tokens);
   saveToken(tokens);
+
+  // L'indirizzo serve solo a mostrare quale account è collegato: se il recupero fallisce il login resta valido.
+  try {
+    const profile = await getGmailClient().users.getProfile({ userId: 'me' });
+    saveToken({ ...loadToken(), email: profile.data.emailAddress });
+  } catch (err) {
+    console.warn(`Impossibile leggere l'indirizzo dell'account: ${err.message}`);
+  }
 }
 
 function isAuthenticated() {
@@ -55,8 +63,12 @@ function isAuthenticated() {
   return Boolean(saved && saved.refresh_token);
 }
 
+function getAccountEmail() {
+  return loadToken()?.email || null;
+}
+
 function getGmailClient() {
   return google.gmail({ version: 'v1', auth: getAuthClient() });
 }
 
-module.exports = { getAuthUrl, handleCallback, isAuthenticated, getGmailClient };
+module.exports = { getAuthUrl, handleCallback, isAuthenticated, getAccountEmail, getGmailClient };

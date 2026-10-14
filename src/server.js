@@ -1,6 +1,6 @@
 const express = require('express');
 const { config, PUBLIC_DIR } = require('./config');
-const { getAuthUrl, handleCallback, isAuthenticated, getGmailClient } = require('./auth');
+const { getAuthUrl, handleCallback, isAuthenticated, getAccountEmail, getGmailClient } = require('./auth');
 const { analysisState, runAnalysis, getSenders, getSenderGroup } = require('./analysis');
 const { trashMessages, unsubscribeOneClick } = require('./actions');
 
@@ -14,7 +14,7 @@ function requireAuth(req, res, next) {
 }
 
 app.get('/api/status', (req, res) => {
-  res.json({ authenticated: isAuthenticated() });
+  res.json({ authenticated: isAuthenticated(), email: getAccountEmail() });
 });
 
 app.get('/auth/google', (req, res) => {

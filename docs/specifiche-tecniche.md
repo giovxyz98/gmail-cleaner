@@ -32,6 +32,8 @@ Le dipendenze vanno in una sola direzione: `server` → `analysis` / `actions` /
 - OAuth2 Google, un solo account collegato.
 - Credenziali: Client ID + Client Secret, lette da `config.json`, mai esposte al frontend.
 - Scope MVP: `gmail.modify`.
+- Account unico: l'app gestisce una sola casella. Un nuovo login sovrascrive `data/token.json`.
+- Dopo il login viene letto l'indirizzo con `users.getProfile` e salvato nel campo `email` di `data/token.json`; `GET /api/status` lo restituisce e il frontend lo mostra ("Collegato come ..."). Se il recupero fallisce il login resta valido, senza indirizzo.
 - Il token viene salvato su disco (`data/token.json`) dopo il primo login. Il refresh token permette di ottenere nuovi access token senza rifare il login.
 - Il client OAuth2 intercetta l'evento di refresh e riscrive il token su disco, preservando il refresh token esistente nei casi in cui il refresh non lo restituisca di nuovo.
 - L'app su Google Cloud Console va portata in stato "In production": in stato "Testing" il refresh token scade dopo 7 giorni (vedi [setup-google-cloud.md](setup-google-cloud.md)).
@@ -83,7 +85,7 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 
 ## API interna
 
-- `GET /api/status` — stato dell'autenticazione.
+- `GET /api/status` — stato dell'autenticazione e indirizzo dell'account collegato.
 - `GET /auth/google` — avvia il flusso OAuth.
 - `GET /auth/google/callback` — riceve il `code`, scambia il token, lo salva.
 - `POST /api/analyze` — avvia l'analisi in background (se già in corso, risponde 409).

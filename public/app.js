@@ -6,13 +6,13 @@ async function fetchStatus() {
 }
 
 async function init() {
-  const { authenticated } = await fetchStatus();
+  const { authenticated, email } = await fetchStatus();
   const authArea = document.getElementById('auth-area');
   if (!authenticated) {
     authArea.innerHTML = '<a href="/auth/google"><button>Collega account Google</button></a>';
     return;
   }
-  authArea.innerHTML = '<span>Account collegato</span>';
+  authArea.textContent = email ? `Collegato come ${email}` : 'Account collegato';
   document.getElementById('analyze-area').hidden = false;
   document.getElementById('analyze-btn').addEventListener('click', startAnalysis);
   document.getElementById('sort-select').addEventListener('change', (e) => {

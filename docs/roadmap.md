@@ -34,4 +34,5 @@ Dalle specifiche, in ordine indicativo di priorità.
 
 ## Idee valutate e scartate
 
+- **Più account Gmail**: scelto un account solo (15/10/2026). L'email è già salvata con il token, quindi aggiungerli in futuro significa un token per indirizzo, l'analisi per account e un selettore nell'interfaccia.
 - **Gemini / LLM per classificare i mittenti**: non necessario per ora. Nessuna chiave API nel progetto.
