@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gmail Cleaner</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Gmail Cleaner</h1>
+  <div id="auth-area"></div>
+</header>
+
+<main>
+  <section id="analyze-area" hidden>
+    <button id="analyze-btn">Avvia analisi</button>
+    <div id="progress" hidden>
+      <div class="progress-bar"><div id="progress-fill"></div></div>
+      <p id="progress-text"></p>
+    </div>
+  </section>
+
+  <section id="senders-area" hidden>
+    <div class="toolbar">
+      <label for="sort-select">Ordina per</label>
+      <select id="sort-select">
+        <option value="count">Numero email</option>
+        <option value="lastDate">Ultima ricezione</option>
+        <option value="firstDate">Prima ricezione</option>
+        <option value="name">Nome</option>
+        <option value="email">Indirizzo</option>
+      </select>
+    </div>
+    <table id="senders-table">
+      <thead>
+        <tr>
+          <th>Mittente</th>
+          <th>Email</th>
+          <th>Totale</th>
+          <th>Prima</th>
+          <th>Ultima</th>
+          <th>Inbox</th>
+          <th>Spam</th>
+          <th>Cestino</th>
+          <th>Disiscrizione</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="senders-tbody"></tbody>
+    </table>
+  </section>
+</main>
+
+<div id="modal-overlay" hidden>
+  <div id="modal-box">
+    <p id="modal-text"></p>
+    <div class="modal-actions">
+      <button id="modal-cancel" class="secondary">Annulla</button>
+      <button id="modal-confirm">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

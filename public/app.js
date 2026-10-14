@@ -1,0 +1,177 @@
+const state = { senders: [], sort: 'count' };
+
+async function fetchStatus() {
+  const res = await fetch('/api/status');
+  return res.json();
+}
+
+async function init() {
+  const { authenticated } = await fetchStatus();
+  const authArea = document.getElementById('auth-area');
+  if (!authenticated) {
+    authArea.innerHTML = '<a href="/auth/google"><button>Collega account Google</button></a>';
+    return;
+  }
+  authArea.innerHTML = '<span>Account collegato</span>';
+  document.getElementById('analyze-area').hidden = false;
+  document.getElementById('analyze-btn').addEventListener('click', startAnalysis);
+  document.getElementById('sort-select').addEventListener('change', (e) => {
+    state.sort = e.target.value;
+    loadSenders();
+  });
+}
+
+async function startAnalysis() {
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  document.getElementById('progress').hidden = false;
+
+  const res = await fetch('/api/analyze', { method: 'POST' });
+  if (!res.ok) {
+    btn.disabled = false;
+    return;
+  }
+  pollProgress();
+}
+
+async function pollProgress() {
+  const res = await fetch('/api/analyze/status');
+  const s = await res.json();
+  const text = document.getElementById('progress-text');
+  const fill = document.getElementById('progress-fill');
+
+  if (s.status === 'listing') {
+    text.textContent = 'Recupero elenco messaggi...';
+    fill.style.width = '5%';
+  } else if (s.status === 'fetching') {
+    const pct = s.total ? Math.round((s.processed / s.total) * 100) : 0;
+    text.textContent = `Elaborate ${s.processed} di ${s.total} email`;
+    fill.style.width = `${pct}%`;
+  } else if (s.status === 'done') {
+    text.textContent = `Analisi completata: ${s.processed} email elaborate`;
+    fill.style.width = '100%';
+    document.getElementById('analyze-btn').disabled = false;
+    loadSenders();
+    return;
+  } else if (s.status === 'error') {
+    text.textContent = `Errore durante l'analisi: ${s.error}`;
+    document.getElementById('analyze-btn').disabled = false;
+    return;
+  }
+
+  setTimeout(pollProgress, 1000);
+}
+
+async function loadSenders() {
+  const res = await fetch(`/api/senders?sort=${state.sort}`);
+  state.senders = await res.json();
+  renderSenders();
+  document.getElementById('senders-area').hidden = false;
+}
+
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString('it-IT');
+}
+
+function unsubscribeCell(sender) {
+  const { type, url, mailto } = sender.unsubscribe;
+  if (type === 'one-click') {
+    return `<span class="badge one-click">One-Click</span> <button data-action="unsubscribe" data-email="${sender.email}">Disiscrivi</button>`;
+  }
+  if (type === 'https') {
+    return `<span class="badge https">Link manuale</span> <a href="${url}" target="_blank" rel="noopener"><button class="secondary">Apri</button></a>`;
+  }
+  if (type === 'mailto') {
+    return `<span class="badge mailto">Email</span> <a href="${mailto}"><button class="secondary">Apri</button></a>`;
+  }
+  return '<span class="badge none">Nessun metodo</span>';
+}
+
+function renderSenders() {
+  const tbody = document.getElementById('senders-tbody');
+  tbody.innerHTML = state.senders
+    .map(
+      (s) => `
+    <tr data-email="${s.email}">
+      <td>${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.email)}</td>
+      <td>${s.count}</td>
+      <td>${formatDate(s.firstDate)}</td>
+      <td>${formatDate(s.lastDate)}</td>
+      <td>${s.inboxCount}</td>
+      <td>${s.spamCount}</td>
+      <td>${s.trashCount}</td>
+      <td>${unsubscribeCell(s)}</td>
+      <td class="row-actions">
+        <button class="danger" data-action="trash" data-email="${s.email}">Sposta nel Cestino</button>
+      </td>
+    </tr>
+  `
+    )
+    .join('');
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showModal(text) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('modal-overlay');
+    document.getElementById('modal-text').textContent = text;
+    overlay.hidden = false;
+
+    const confirmBtn = document.getElementById('modal-confirm');
+    const cancelBtn = document.getElementById('modal-cancel');
+
+    const cleanup = (result) => {
+      overlay.hidden = true;
+      confirmBtn.removeEventListener('click', onConfirm);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onConfirm = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+
+    confirmBtn.addEventListener('click', onConfirm);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
+document.addEventListener('click', async (e) => {
+  const action = e.target.dataset.action;
+  if (!action) return;
+  const email = e.target.dataset.email;
+  const sender = state.senders.find((s) => s.email === email);
+
+  if (action === 'unsubscribe') {
+    const confirmed = await showModal(
+      `Verrà eseguita la disiscrizione automatica (metodo: One-Click) per ${sender.email}. Continuare?`
+    );
+    if (!confirmed) return;
+    const res = await fetch(`/api/senders/${encodeURIComponent(email)}/unsubscribe`, { method: 'POST' });
+    const result = await res.json();
+    alert(result.success ? 'Disiscrizione completata.' : `Disiscrizione non riuscita (status ${result.status}).`);
+  }
+
+  if (action === 'trash') {
+    const confirmed = await showModal(
+      `Verranno spostate ${sender.count} email di ${sender.email} nel Cestino. Confermi?`
+    );
+    if (!confirmed) return;
+    const res = await fetch(`/api/senders/${encodeURIComponent(email)}/trash`, { method: 'POST' });
+    const result = await res.json();
+    if (result.failed > 0) {
+      alert(`Operazione parziale: ${result.succeeded} riuscite, ${result.failed} fallite su ${result.total}.`);
+    } else {
+      alert(`Spostate ${result.succeeded} email nel Cestino.`);
+    }
+    loadSenders();
+  }
+});
+
+init();
