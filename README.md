@@ -16,6 +16,8 @@ npm start
 
 Apri `http://localhost:3000`, collega l'account Google e avvia l'analisi.
 
+Su Windows basta il doppio clic su `avvia.bat`: installa le dipendenze se mancano, avvia il server in una finestra (chiudila per fermarlo) e apre Chrome su localhost.
+
 Il token OAuth viene salvato in `data/token.json` e riusato ai riavvii successivi.
 
 ## Struttura del progetto

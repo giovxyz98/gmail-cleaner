@@ -1,0 +1,60 @@
+1. SICUREZZA DEL SERVER LOCALE
+
+- Il server Express deve ascoltare esclusivamente su 127.0.0.1, salvo necessità esplicite.
+- Le route che modificano la casella devono essere protette da richieste provenienti da siti esterni (CSRF).
+- Validare Host e Origin quando applicabile.
+- Proteggere il flusso OAuth tramite parametro state e redirect URI rigorosamente configurato.
+- Escludere config.json da Git, oltre a data/ e data/token.json.
+- Applicare permessi restrittivi ai file contenenti credenziali e token.
+
+
+2. SICUREZZA DELLA DISISCRIZIONE ONE-CLICK
+
+- Accettare esclusivamente URL HTTPS per le richieste One-Click.
+- Validare gli URL e bloccare destinazioni verso indirizzi IP locali, privati e riservati.
+- Disabilitare i redirect automatici oppure rivalidare rigorosamente ogni destinazione.
+- Impostare un timeout per le richieste e limiti alla dimensione delle risposte.
+- Gestire gli errori di rete senza interrompere le operazioni sugli altri mittenti.
+
+
+3. GESTIONE DELLE CASELLE DI GRANDI DIMENSIONI
+
+- Mantenere la concorrenza delle chiamate messages.get configurabile, con valore predefinito pari a 10.
+- Gestire le interruzioni dell'analisi senza lasciare uno stato incoerente.
+- Evitare di mantenere in memoria strutture dati e liste di ID eccessivamente grandi, valutando una persistenza locale temporanea quando necessaria.
+- Definire esplicitamente quali messaggi vengono inclusi nell'analisi, considerando che includeSpamTrash: true include anche Spam e Cestino.
+- Esporre lo stato di avanzamento e gli eventuali errori senza dichiarare completata un'analisi parziale.
+
+
+4. PARSING DEL MITTENTE
+
+- Il parser From deve gestire correttamente i formati standard degli header email, inclusi i nomi codificati e gli indirizzi racchiusi tra parentesi angolari.
+- Preferire una libreria affidabile per il parsing degli indirizzi rispetto a una regex semplice.
+- Normalizzare in minuscolo gli indirizzi utilizzati come chiave di raggruppamento.
+- Definire la gestione dei messaggi con header From assente o non valido, evitando raggruppamenti errati.
+
+
+5. SICUREZZA DELLE OPERAZIONI DI PULIZIA
+
+- Prima di eseguire un'azione, verificare che il mittente richiesto corrisponda a un gruppo presente nell'analisi corrente.
+- Validare e codificare correttamente il parametro email ricevuto nella route.
+- Richiedere una conferma esplicita prima di spostare i messaggi nel Cestino, indicando il numero di messaggi coinvolti.
+- Mantenere la gestione per blocchi da massimo 1000 ID, contabilizzando separatamente successi e fallimenti.
+- Impedire richieste duplicate o concorrenti incompatibili sulla stessa operazione di pulizia.
+
+
+6. AUTENTICAZIONE OAUTH
+
+- Preservare il refresh token esistente quando Google non ne restituisce uno durante il refresh.
+- Gestire la revoca del token e gli errori di autenticazione, richiedendo un nuovo login quando necessario.
+- Distinguere la modalità In production dalla verifica OAuth: il passaggio in produzione non implica automaticamente che l'app sia verificata.
+- Non registrare nei log Client Secret, access token, refresh token o altri dati sensibili.
+
+
+7. GESTIONE CENTRALIZZATA DEGLI ERRORI
+
+- Implementare un middleware Express per uniformare le risposte di errore delle route.
+- Non esporre stack trace o dettagli interni al frontend.
+- Accettare esclusivamente i criteri di ordinamento previsti da GET /api/senders?sort=....
+- Gestire esplicitamente timeout, errori di rete, errori API permanenti e operazioni parzialmente riuscite.
+- Garantire che lo stato dell'analisi venga aggiornato correttamente anche in caso di eccezioni.
