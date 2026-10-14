@@ -38,6 +38,7 @@ config.example.json   modello di configurazione
 | [docs/setup-google-cloud.md](docs/setup-google-cloud.md) | Creare progetto, Gmail API e credenziali OAuth |
 | [docs/specifiche-funzionali.md](docs/specifiche-funzionali.md) | Cosa fa l'app, dal punto di vista dell'utente |
 | [docs/specifiche-tecniche.md](docs/specifiche-tecniche.md) | Come è costruita: architettura, moduli, API interna |
+| [docs/sicurezza-e-robustezza.md](docs/sicurezza-e-robustezza.md) | Cosa manca in sicurezza e robustezza, cosa fare e cosa rimandare |
 | [docs/roadmap.md](docs/roadmap.md) | Stato del lavoro e cose da fare |
 
 ## Cosa fa la versione attuale

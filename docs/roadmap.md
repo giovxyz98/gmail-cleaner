@@ -16,6 +16,16 @@ Stato aggiornato al 15/10/2026.
 - [ ] Portare il progetto Google Cloud da "Testing" a "In produzione" quando funziona (altrimenti il refresh token scade dopo 7 giorni).
 - [ ] Inizializzare un repository git (la cartella non lo è ancora).
 
+## Sicurezza e robustezza
+
+Da fare **prima di usare l'app su una casella reale**, in quest'ordine (dettagli e motivazioni in [sicurezza-e-robustezza.md](sicurezza-e-robustezza.md)):
+
+- [ ] Server locale: ascolto su `127.0.0.1`, controllo Host/Origin, parametro `state` nell'OAuth.
+- [ ] Pulizia: niente richieste duplicate o concorrenti, numero di messaggi nel modale, validazione dell'email.
+- [ ] One-Click: solo HTTPS, blocco IP privati, niente redirect, timeout e limite di risposta.
+- [ ] OAuth ed errori: gestione revoca/`invalid_grant`, middleware errori, `sort` validato.
+- [ ] Caselle grandi e parsing: messaggi che falliscono saltati e contati, concorrenza configurabile, `From` non valido gestito.
+
 ## Funzionalità future
 
 Dalle specifiche, in ordine indicativo di priorità.
