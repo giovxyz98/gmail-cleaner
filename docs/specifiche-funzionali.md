@@ -6,13 +6,15 @@ Un'app che gira sul computer e serve a ripulire una casella Gmail piena di anni 
 
 ## Collegamento dell'account
 
-Al primo avvio si collega un account Gmail tramite il login Google. Dopo il primo accesso l'app resta collegata e non chiede più di rifare il login.
+Al primo avvio si collega un account Gmail tramite il login Google. Dopo il primo accesso l'app resta collegata e non chiede più di rifare il login. Se l'accesso viene revocato dall'account Google (o scade), l'app lo riconosce e propone di collegare di nuovo l'account.
 
 ## Analisi della casella
 
 L'app scorre tutta la casella, non solo la Posta in arrivo: include anche archivio, Promozioni, Social, altre categorie, Spam e Cestino.
 
 L'analisi richiede tempo su caselle grandi. Durante l'operazione deve essere visibile un avanzamento.
+
+Se alcune email non si riescono a leggere, l'analisi non si ferma: le salta, le conta e al termine dice chiaramente che l'elenco è **incompleto** (e quante email mancano). Le email senza un mittente valido vengono ignorate e il loro numero è indicato.
 
 ## Vista per mittente
 
@@ -43,7 +45,7 @@ Due azioni distinte per ogni mittente:
 - **Sposta nel Cestino** — tutte le email di quel mittente finiscono nel Cestino e restano recuperabili.
 - **Elimina definitivamente** — le email vengono cancellate senza possibilità di recupero.
 
-Entrambe chiedono conferma, una alla volta, sul singolo mittente. Non esiste una conferma unica che agisce su più mittenti insieme: è l'unico modo per non svuotare per sbaglio mezza casella.
+Entrambe chiedono conferma, una alla volta, sul singolo mittente, indicando quante email sono coinvolte. Su un mittente si può eseguire una sola azione alla volta, e nessuna azione parte mentre è in corso un'analisi. Non esiste una conferma unica che agisce su più mittenti insieme: è l'unico modo per non svuotare per sbaglio mezza casella.
 
 ## Esito delle operazioni
 

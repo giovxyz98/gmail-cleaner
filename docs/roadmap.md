@@ -1,6 +1,6 @@
 # Roadmap
 
-Stato aggiornato al 15/10/2026.
+Stato aggiornato al 15/10/2026. Cronologia delle modifiche in [CHANGELOG](../CHANGELOG.md).
 
 ## Stato attuale
 
@@ -8,23 +8,25 @@ Stato aggiornato al 15/10/2026.
 - Credenziali Google Cloud create e inserite in `config.json`.
 - Server, frontend e redirect OAuth verificati all'avvio.
 - Codice riorganizzato in `src/` (backend) e `public/` (frontend).
+- Interventi di sicurezza e robustezza completati (versione 0.2.0), verificati con prove locali e con un client Gmail simulato. **Nessun login né analisi reale ancora eseguiti.**
 
 ## Da fare subito
 
 - [ ] Primo login reale con il proprio account Gmail (utente di test).
 - [ ] Prima analisi completa su una casella vera, per verificare tempi e quote.
 - [ ] Portare il progetto Google Cloud da "Testing" a "In produzione" quando funziona (altrimenti il refresh token scade dopo 7 giorni).
-- [ ] Inizializzare un repository git (la cartella non lo è ancora).
+- [x] Repository git creato e pubblicato su GitHub (pubblico: mai committare `config.json` né `data/`).
 
 ## Sicurezza e robustezza
 
-Da fare **prima di usare l'app su una casella reale**, in quest'ordine (dettagli e motivazioni in [sicurezza-e-robustezza.md](sicurezza-e-robustezza.md)):
+Completata il 15/10/2026 (dettagli nel [CHANGELOG](../CHANGELOG.md) e nelle [specifiche tecniche](specifiche-tecniche.md)): server locale, pulizia, One-Click, OAuth ed errori, caselle grandi e parsing.
 
-- [x] Server locale: ascolto su `127.0.0.1`, controllo Host/Origin, parametro `state` nell'OAuth.
-- [x] Pulizia: niente richieste duplicate o concorrenti, numero di messaggi nel modale, validazione dell'email.
-- [x] One-Click: solo HTTPS, blocco IP privati, niente redirect, timeout e limite di risposta.
-- [x] OAuth ed errori: gestione revoca/`invalid_grant`, middleware errori, `sort` validato.
-- [x] Caselle grandi e parsing: messaggi che falliscono saltati e contati, concorrenza configurabile, `From` non valido gestito.
+Rimandato o scartato, con motivo:
+
+- **Permessi restrittivi sui file di credenziali e token:** su Windows e con un solo utente non porta un beneficio concreto. `config.json` e `data/` sono comunque esclusi da git.
+- **Persistenza temporanea degli ID dei messaggi:** anche con centinaia di migliaia di messaggi gli ID occupano pochi MB. Ha senso insieme alla cache dell'analisi (vedi sotto).
+- **Libreria esterna per il parsing degli indirizzi:** il parser interno copre i formati comuni; da rivalutare solo se la prima analisi reale mostra mittenti sbagliati.
+- **Modalità "In production" e verifica OAuth:** sono cose distinte. Passare in produzione evita la scadenza a 7 giorni del refresh token, ma non rende l'app "verificata" da Google (per uso personale non serve).
 
 ## Funzionalità future
 

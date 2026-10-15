@@ -18,7 +18,7 @@ Apri `http://localhost:3000`, collega l'account Google e avvia l'analisi.
 
 Su Windows basta il doppio clic su `avvia.bat`: installa le dipendenze se mancano, avvia il server in una finestra (chiudila per fermarlo) e apre Chrome su localhost.
 
-Il token OAuth viene salvato in `data/token.json` e riusato ai riavvii successivi.
+Il token OAuth viene salvato in `data/token.json` e riusato ai riavvii successivi. Se viene revocato o scade, l'app torna a proporre il login.
 
 ## Struttura del progetto
 
@@ -38,8 +38,8 @@ config.example.json   modello di configurazione
 | [docs/setup-google-cloud.md](docs/setup-google-cloud.md) | Creare progetto, Gmail API e credenziali OAuth |
 | [docs/specifiche-funzionali.md](docs/specifiche-funzionali.md) | Cosa fa l'app, dal punto di vista dell'utente |
 | [docs/specifiche-tecniche.md](docs/specifiche-tecniche.md) | Come è costruita: architettura, moduli, API interna |
-| [docs/sicurezza-e-robustezza.md](docs/sicurezza-e-robustezza.md) | Cosa manca in sicurezza e robustezza, cosa fare e cosa rimandare |
 | [docs/roadmap.md](docs/roadmap.md) | Stato del lavoro e cose da fare |
+| [CHANGELOG.md](CHANGELOG.md) | Cosa è cambiato in ogni versione |
 
 ## Cosa fa la versione attuale
 
@@ -50,3 +50,5 @@ config.example.json   modello di configurazione
 - Disiscrizione One-Click (RFC 8058) dove supportata; link o indirizzo per la disiscrizione manuale altrimenti.
 - Spostamento nel Cestino per mittente, con conferma singola e report degli eventuali fallimenti parziali.
 - Retry automatico con backoff sugli errori di quota.
+- Analisi che salta i messaggi illeggibili e segnala quando l'elenco è incompleto; concorrenza regolabile con `concurrency` in `config.json`.
+- Protezioni per l'uso locale: server raggiungibile solo da questo computer, richieste verificate contro siti esterni, disiscrizione solo verso indirizzi pubblici HTTPS.
