@@ -1,7 +1,15 @@
 const express = require('express');
 const { config, PUBLIC_DIR } = require('./config');
-const { getAuthUrl, handleCallback, isAuthenticated, getAccountEmail, getGmailClient } = require('./auth');
-const { analysisState, runAnalysis, getSenders, getSenderGroup } = require('./analysis');
+const {
+  getAuthUrl,
+  handleCallback,
+  isAuthenticated,
+  isAuthError,
+  clearAuth,
+  getAccountEmail,
+  getGmailClient,
+} = require('./auth');
+const { analysisState, runAnalysis, getSenders, getSenderGroup, SORT_KEYS } = require('./analysis');
 const { trashMessages, unsubscribeOneClick } = require('./actions');
 const { localGuard } = require('./security');
 
@@ -45,7 +53,9 @@ app.post('/api/analyze', requireAuth, (req, res) => {
   if (busySenders.size > 0) return res.status(409).json({ error: 'operation_in_progress' });
   analysisRunning = true;
   runAnalysis(getGmailClient())
-    .catch(() => {})
+    .catch((err) => {
+      if (isAuthError(err)) clearAuth();
+    })
     .finally(() => {
       analysisRunning = false;
     });
@@ -57,7 +67,9 @@ app.get('/api/analyze/status', requireAuth, (req, res) => {
 });
 
 app.get('/api/senders', requireAuth, (req, res) => {
-  res.json(getSenders(req.query.sort));
+  const { sort } = req.query;
+  if (sort !== undefined && !SORT_KEYS.includes(sort)) return res.status(400).json({ error: 'invalid_sort' });
+  res.json(getSenders(sort));
 });
 
 const EMAIL_PATTERN = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]+$/;
@@ -99,14 +111,28 @@ app.post('/api/senders/:email/unsubscribe', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/senders/:email/trash', requireAuth, async (req, res) => {
+app.post('/api/senders/:email/trash', requireAuth, async (req, res, next) => {
   const group = acquireSender(req, res);
   if (!group) return;
   try {
     res.json(await trashMessages(getGmailClient(), group.messageIds));
+  } catch (err) {
+    next(err);
   } finally {
     busySenders.delete(group.email);
   }
+});
+
+// Gestione unica degli errori: nessuno stack né dettaglio interno al frontend.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (isAuthError(err)) {
+    clearAuth();
+    return res.status(401).json({ error: 'not_authenticated', reason: 'auth_expired' });
+  }
+  const status = err.status >= 400 && err.status < 500 ? err.status : 500;
+  console.error(`Errore su ${req.method} ${req.path}: ${err.message}`);
+  res.status(status).json({ error: status === 500 ? 'internal_error' : 'bad_request' });
 });
 
 app.listen(config.port, '127.0.0.1', () => {

@@ -1,5 +1,6 @@
 const { withRetry } = require('./retry');
 const { safePost } = require('./netguard');
+const { isAuthError } = require('./auth');
 
 function chunk(array, size) {
   const chunks = [];
@@ -18,6 +19,7 @@ async function trashMessages(gmail, messageIds) {
       );
       result.succeeded += ids.length;
     } catch (err) {
+      if (isAuthError(err)) throw err;
       result.failed += ids.length;
       result.errors.push(err.message || String(err));
     }

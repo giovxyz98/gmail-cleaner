@@ -36,6 +36,7 @@ Le dipendenze vanno in una sola direzione: `server` → `analysis` / `actions` /
 - Scope MVP: `gmail.modify`.
 - Account unico: l'app gestisce una sola casella. Un nuovo login sovrascrive `data/token.json`.
 - Dopo il login viene letto l'indirizzo con `users.getProfile` e salvato nel campo `email` di `data/token.json`; `GET /api/status` lo restituisce e il frontend lo mostra ("Collegato come ..."). Se il recupero fallisce il login resta valido, senza indirizzo.
+- Revoca e `invalid_grant` (o 401 da Gmail): il token locale viene cancellato, l'app risulta scollegata e il frontend, ricevuto un 401, ricarica la pagina mostrando "Collega account Google". Un'analisi interrotta così riporta "Sessione Google scaduta o revocata".
 - Il token viene salvato su disco (`data/token.json`) dopo il primo login. Il refresh token permette di ottenere nuovi access token senza rifare il login.
 - Il client OAuth2 intercetta l'evento di refresh e riscrive il token su disco, preservando il refresh token esistente nei casi in cui il refresh non lo restituisca di nuovo.
 - L'app su Google Cloud Console va portata in stato "In production": in stato "Testing" il refresh token scade dopo 7 giorni (vedi [setup-google-cloud.md](setup-google-cloud.md)).
@@ -88,6 +89,8 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 
 ## Gestione errori
 
+- Un unico middleware Express risponde agli errori non gestiti: 401 per i problemi di autenticazione, 400 `bad_request` per richieste malformate, 500 `internal_error` per il resto. Il dettaglio finisce solo nel log del server, mai nella risposta (niente stack trace).
+- `GET /api/senders?sort=` accetta solo `count`, `lastDate`, `firstDate`, `name`, `email`; altri valori ricevono 400 `invalid_sort`.
 - Lo stato dell'analisi (`idle` / `listing` / `fetching` / `done` / `error`) e i contatori `processed`/`total` sono esposti da un endpoint di stato e interrogati dal frontend con polling.
 - Le route `/api/senders/:email/...` validano il formato dell'email (400 `invalid_email`), cercano il mittente nell'analisi corrente (404 `sender_not_found`) e permettono **una sola operazione per mittente alla volta** (409 `operation_in_progress`). Durante un'analisi le azioni sono bloccate (409 `analysis_in_progress`) e, viceversa, l'analisi non parte se c'è un'operazione in corso.
 - Le azioni di pulizia restituiscono sempre `total`/`succeeded`/`failed`/`errors`: un'operazione parziale non viene mai riportata come completata.

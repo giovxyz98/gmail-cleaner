@@ -1,5 +1,15 @@
 const state = { senders: [], sort: 'count' };
 
+// Se la sessione Google è scaduta o revocata il server risponde 401: si ricarica la pagina, che propone il nuovo login.
+async function api(url, options) {
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    location.reload();
+    return new Promise(() => {});
+  }
+  return res;
+}
+
 async function fetchStatus() {
   const res = await fetch('/api/status');
   return res.json();
@@ -26,7 +36,7 @@ async function startAnalysis() {
   btn.disabled = true;
   document.getElementById('progress').hidden = false;
 
-  const res = await fetch('/api/analyze', { method: 'POST' });
+  const res = await api('/api/analyze', { method: 'POST' });
   if (!res.ok) {
     btn.disabled = false;
     return;
@@ -35,7 +45,7 @@ async function startAnalysis() {
 }
 
 async function pollProgress() {
-  const res = await fetch('/api/analyze/status');
+  const res = await api('/api/analyze/status');
   const s = await res.json();
   const text = document.getElementById('progress-text');
   const fill = document.getElementById('progress-fill');
@@ -63,7 +73,7 @@ async function pollProgress() {
 }
 
 async function loadSenders() {
-  const res = await fetch(`/api/senders?sort=${state.sort}`);
+  const res = await api(`/api/senders?sort=${state.sort}`);
   state.senders = await res.json();
   renderSenders();
   document.getElementById('senders-area').hidden = false;
@@ -166,7 +176,7 @@ document.addEventListener('click', async (e) => {
       `Verrà eseguita la disiscrizione automatica (metodo: One-Click) per ${sender.email}. Continuare?`
     );
     if (!confirmed) return;
-    const res = await fetch(`/api/senders/${encodeURIComponent(email)}/unsubscribe`, { method: 'POST' });
+    const res = await api(`/api/senders/${encodeURIComponent(email)}/unsubscribe`, { method: 'POST' });
     const result = await res.json();
     if (!res.ok) return alert(actionError(result));
     alert(result.success ? 'Disiscrizione completata.' : `Disiscrizione non riuscita (status ${result.status}).`);
@@ -177,7 +187,7 @@ document.addEventListener('click', async (e) => {
       `Verranno spostate ${sender.count} email di ${sender.email} nel Cestino. Confermi?`
     );
     if (!confirmed) return;
-    const res = await fetch(`/api/senders/${encodeURIComponent(email)}/trash`, { method: 'POST' });
+    const res = await api(`/api/senders/${encodeURIComponent(email)}/trash`, { method: 'POST' });
     const result = await res.json();
     if (!res.ok) return alert(actionError(result));
     if (result.failed > 0) {

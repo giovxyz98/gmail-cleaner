@@ -1,5 +1,6 @@
 const pLimit = require('p-limit');
 const { withRetry } = require('./retry');
+const { isAuthError } = require('./auth');
 const { parseFrom, resolveUnsubscribeMethod, headerValue } = require('./parsers');
 
 const METADATA_HEADERS = ['From', 'Date', 'Subject', 'List-Unsubscribe', 'List-Unsubscribe-Post', 'List-ID'];
@@ -99,10 +100,21 @@ async function runAnalysis(gmail) {
     analysisState.status = 'done';
   } catch (err) {
     analysisState.status = 'error';
-    analysisState.error = err.message || String(err);
+    analysisState.error = isAuthError(err)
+      ? "Sessione Google scaduta o revocata: collega di nuovo l'account."
+      : err.message || String(err);
     throw err;
   }
 }
+
+const SORTERS = {
+  count: (a, b) => b.count - a.count,
+  lastDate: (a, b) => b.lastDate - a.lastDate,
+  firstDate: (a, b) => a.firstDate - b.firstDate,
+  name: (a, b) => a.name.localeCompare(b.name),
+  email: (a, b) => a.email.localeCompare(b.email),
+};
+const SORT_KEYS = Object.keys(SORTERS);
 
 function getSenders(sort) {
   const groups = Array.from(senderGroups.values()).map((g) => ({
@@ -117,19 +129,11 @@ function getSenders(sort) {
     unsubscribe: g.unsubscribe,
   }));
 
-  const sorters = {
-    count: (a, b) => b.count - a.count,
-    lastDate: (a, b) => b.lastDate - a.lastDate,
-    firstDate: (a, b) => a.firstDate - b.firstDate,
-    name: (a, b) => a.name.localeCompare(b.name),
-    email: (a, b) => a.email.localeCompare(b.email),
-  };
-
-  return groups.sort(sorters[sort] || sorters.count);
+  return groups.sort(SORTERS[sort] || SORTERS.count);
 }
 
 function getSenderGroup(email) {
   return senderGroups.get(email);
 }
 
-module.exports = { analysisState, runAnalysis, getSenders, getSenderGroup };
+module.exports = { analysisState, runAnalysis, getSenders, getSenderGroup, SORT_KEYS };

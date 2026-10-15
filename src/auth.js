@@ -90,6 +90,23 @@ function isAuthenticated() {
   return Boolean(saved && saved.refresh_token);
 }
 
+// Token revocato o scaduto in modo irrecuperabile (revoca dall'account Google, password cambiata, 7 giorni in "Testing").
+function isAuthError(err) {
+  const status = err?.response?.status ?? err?.status ?? err?.code;
+  const code = err?.response?.data?.error;
+  return code === 'invalid_grant' || /invalid_grant/.test(err?.message || '') || status === 401;
+}
+
+// Dimentica il token: da qui l'app risulta scollegata e il frontend propone un nuovo login.
+function clearAuth() {
+  try {
+    fs.unlinkSync(TOKEN_PATH);
+  } catch (err) {
+    // Già assente.
+  }
+  oauth2Client = null;
+}
+
 function getAccountEmail() {
   return loadToken()?.email || null;
 }
@@ -98,4 +115,4 @@ function getGmailClient() {
   return google.gmail({ version: 'v1', auth: getAuthClient() });
 }
 
-module.exports = { getAuthUrl, handleCallback, isAuthenticated, getAccountEmail, getGmailClient };
+module.exports = { getAuthUrl, handleCallback, isAuthenticated, isAuthError, clearAuth, getAccountEmail, getGmailClient };
