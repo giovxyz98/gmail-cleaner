@@ -15,6 +15,7 @@ Documento complementare alle [specifiche funzionali](specifiche-funzionali.md): 
 | --- | --- |
 | `src/server.js` | Entry point: Express, route HTTP, controllo dell'autenticazione. Nessuna logica di business. |
 | `src/config.js` | Lettura di `config.json` e percorsi condivisi (`data/`, `public/`). |
+| `src/security.js` | Guardia delle richieste: controllo di `Host` e `Origin` (anti CSRF e DNS rebinding). |
 | `src/auth.js` | OAuth2: client, salvataggio e refresh del token, client Gmail autenticato. |
 | `src/analysis.js` | Scansione della casella, raggruppamento per mittente, stato dell'analisi, ordinamento. |
 | `src/actions.js` | Azioni sulla casella: spostamento nel Cestino, disiscrizione One-Click. |
@@ -74,6 +75,8 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 
 ## Sicurezza
 
+- Il server ascolta solo su `127.0.0.1`. Un middleware (`src/security.js`) rifiuta con 403 le richieste il cui `Host` non è `localhost`/`127.0.0.1` sulla porta configurata (DNS rebinding) e quelle con `Origin` esterno; le richieste che modificano qualcosa (non GET/HEAD) devono avere un `Origin` locale (CSRF).
+- Il flusso OAuth usa un parametro `state` casuale, monouso e valido 10 minuti; il callback senza `state` valido viene rifiutato. Il redirect URI è quello fissato in `config.json`, mai ricavato dalla richiesta.
 - App locale: token OAuth e Client Secret restano su disco (`config.json`, `data/token.json`) e non vengono mai esposti al frontend.
 - Tutte le chiamate alle API Gmail partono dal backend; il frontend parla solo con le route interne dell'app.
 - Nessun dato dell'account lascia la macchina.

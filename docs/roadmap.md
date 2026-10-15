@@ -20,7 +20,7 @@ Stato aggiornato al 15/10/2026.
 
 Da fare **prima di usare l'app su una casella reale**, in quest'ordine (dettagli e motivazioni in [sicurezza-e-robustezza.md](sicurezza-e-robustezza.md)):
 
-- [ ] Server locale: ascolto su `127.0.0.1`, controllo Host/Origin, parametro `state` nell'OAuth.
+- [x] Server locale: ascolto su `127.0.0.1`, controllo Host/Origin, parametro `state` nell'OAuth.
 - [ ] Pulizia: niente richieste duplicate o concorrenti, numero di messaggi nel modale, validazione dell'email.
 - [ ] One-Click: solo HTTPS, blocco IP privati, niente redirect, timeout e limite di risposta.
 - [ ] OAuth ed errori: gestione revoca/`invalid_grant`, middleware errori, `sort` validato.

@@ -3,8 +3,11 @@ const { config, PUBLIC_DIR } = require('./config');
 const { getAuthUrl, handleCallback, isAuthenticated, getAccountEmail, getGmailClient } = require('./auth');
 const { analysisState, runAnalysis, getSenders, getSenderGroup } = require('./analysis');
 const { trashMessages, unsubscribeOneClick } = require('./actions');
+const { localGuard } = require('./security');
 
 const app = express();
+app.disable('x-powered-by');
+app.use(localGuard);
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
 
@@ -22,13 +25,14 @@ app.get('/auth/google', (req, res) => {
 });
 
 app.get('/auth/google/callback', async (req, res) => {
-  const { code, error } = req.query;
-  if (error) return res.status(400).send(`Autorizzazione negata: ${error}`);
+  const { code, state, error } = req.query;
+  if (error) return res.status(400).send('Autorizzazione negata.');
   try {
-    await handleCallback(code);
+    await handleCallback(String(code || ''), String(state || ''));
     res.redirect('/');
   } catch (err) {
-    res.status(500).send(`Errore durante l'autenticazione: ${err.message}`);
+    console.error(`Errore durante l'autenticazione: ${err.message}`);
+    res.status(400).send("Autenticazione non riuscita. Torna all'app e riprova.");
   }
 });
 
@@ -70,6 +74,6 @@ app.post('/api/senders/:email/trash', requireAuth, async (req, res) => {
   res.json(await trashMessages(getGmailClient(), group.messageIds));
 });
 
-app.listen(config.port, () => {
+app.listen(config.port, '127.0.0.1', () => {
   console.log(`Gmail Cleaner in ascolto su http://localhost:${config.port}`);
 });

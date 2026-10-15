@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const { google } = require('googleapis');
 const { config, DATA_DIR, TOKEN_PATH } = require('./config');
@@ -39,11 +40,37 @@ function getAuthClient() {
   return oauth2Client;
 }
 
-function getAuthUrl() {
-  return getAuthClient().generateAuthUrl({ access_type: 'offline', prompt: 'consent', scope: SCOPES });
+// Il parametro state lega la risposta di Google al login avviato da questa istanza (anti login-CSRF).
+const STATE_TTL_MS = 10 * 60 * 1000;
+const pendingStates = new Map();
+
+function createOAuthState() {
+  const now = Date.now();
+  for (const [value, expires] of pendingStates) {
+    if (expires <= now) pendingStates.delete(value);
+  }
+  const state = crypto.randomBytes(24).toString('hex');
+  pendingStates.set(state, now + STATE_TTL_MS);
+  return state;
 }
 
-async function handleCallback(code) {
+function consumeOAuthState(state) {
+  const expires = pendingStates.get(state);
+  pendingStates.delete(state);
+  return Boolean(expires && expires > Date.now());
+}
+
+function getAuthUrl() {
+  return getAuthClient().generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: SCOPES,
+    state: createOAuthState(),
+  });
+}
+
+async function handleCallback(code, state) {
+  if (!code || !consumeOAuthState(state)) throw new Error('Richiesta di autenticazione non valida o scaduta.');
   const client = getAuthClient();
   const { tokens } = await client.getToken(code);
   client.setCredentials(tokens);

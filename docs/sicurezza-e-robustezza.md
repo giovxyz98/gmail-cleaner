@@ -1,6 +1,6 @@
 # Sicurezza e robustezza
 
-Valutazione del 15/10/2026 delle note in [note.txt](note.txt) rispetto al codice attuale. **Nessuna di queste modifiche è ancora implementata**: questo documento dice cosa fare, cosa rimandare e perché. Il contesto è un'app locale per una sola persona, quindi si applica solo ciò che ha un beneficio concreto.
+Valutazione del 15/10/2026 delle note in [note.txt](note.txt) rispetto al codice di allora. La tabella e l'elenco sotto descrivono la situazione **prima** degli interventi; lo stato di avanzamento è nella [roadmap](roadmap.md). Il documento dice cosa fare, cosa rimandare e perché. Il contesto è un'app locale per una sola persona, quindi si applica solo ciò che ha un beneficio concreto.
 
 ## Stato attuale rispetto alle note
 
