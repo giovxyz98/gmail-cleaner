@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto. Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it-IT/1.1.0/); le versioni seguono il `package.json`.
 
+## [Non rilasciato]
+
+### Modificato
+- Il login Google chiede sempre di scegliere l'account (`select_account`), invece di usare il primo disponibile nel browser.
+
 ## [0.2.0] - 2026-10-15
 
 Sicurezza e robustezza, da completare prima del primo uso su una casella reale.
