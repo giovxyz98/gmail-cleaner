@@ -42,7 +42,10 @@ async function logout() {
   );
   if (!confirmed) return;
   const res = await fetch('/api/logout', { method: 'POST' });
-  if (!res.ok) return alert(actionError(await res.json()));
+  if (res.status === 404) {
+    return alert("Il server in esecuzione è una versione vecchia: chiudi la finestra del server e rilancia avvia.bat.");
+  }
+  if (!res.ok) return alert(actionError(await res.json().catch(() => ({}))));
   location.reload();
 }
 
