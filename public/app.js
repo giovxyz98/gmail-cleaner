@@ -76,13 +76,13 @@ function formatDate(ts) {
 function unsubscribeCell(sender) {
   const { type, url, mailto } = sender.unsubscribe;
   if (type === 'one-click') {
-    return `<span class="badge one-click">One-Click</span> <button data-action="unsubscribe" data-email="${sender.email}">Disiscrivi</button>`;
+    return `<span class="badge one-click">One-Click</span> <button data-action="unsubscribe" data-email="${escapeHtml(sender.email)}">Disiscrivi</button>`;
   }
   if (type === 'https') {
-    return `<span class="badge https">Link manuale</span> <a href="${url}" target="_blank" rel="noopener"><button class="secondary">Apri</button></a>`;
+    return `<span class="badge https">Link manuale</span> <a href="${escapeHtml(url)}" target="_blank" rel="noopener"><button class="secondary">Apri</button></a>`;
   }
   if (type === 'mailto') {
-    return `<span class="badge mailto">Email</span> <a href="${mailto}"><button class="secondary">Apri</button></a>`;
+    return `<span class="badge mailto">Email</span> <a href="${escapeHtml(mailto)}"><button class="secondary">Apri</button></a>`;
   }
   return '<span class="badge none">Nessun metodo</span>';
 }
@@ -92,7 +92,7 @@ function renderSenders() {
   tbody.innerHTML = state.senders
     .map(
       (s) => `
-    <tr data-email="${s.email}">
+    <tr data-email="${escapeHtml(s.email)}">
       <td>${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.email)}</td>
       <td>${s.count}</td>
@@ -103,7 +103,7 @@ function renderSenders() {
       <td>${s.trashCount}</td>
       <td>${unsubscribeCell(s)}</td>
       <td class="row-actions">
-        <button class="danger" data-action="trash" data-email="${s.email}">Sposta nel Cestino</button>
+        <button class="danger" data-action="trash" data-email="${escapeHtml(s.email)}">Sposta nel Cestino</button>
       </td>
     </tr>
   `
@@ -142,6 +142,17 @@ function showModal(text) {
   });
 }
 
+const ACTION_ERRORS = {
+  analysis_in_progress: "Un'analisi è in corso: attendi che finisca.",
+  operation_in_progress: "Un'altra operazione su questo mittente è già in corso.",
+  sender_not_found: "Mittente non trovato nell'analisi corrente: rifai l'analisi.",
+  not_one_click: 'Questo mittente non supporta la disiscrizione One-Click.',
+};
+
+function actionError(result) {
+  return ACTION_ERRORS[result.error] || `Operazione non riuscita (${result.error || 'errore sconosciuto'}).`;
+}
+
 document.addEventListener('click', async (e) => {
   const action = e.target.dataset.action;
   if (!action) return;
@@ -155,6 +166,7 @@ document.addEventListener('click', async (e) => {
     if (!confirmed) return;
     const res = await fetch(`/api/senders/${encodeURIComponent(email)}/unsubscribe`, { method: 'POST' });
     const result = await res.json();
+    if (!res.ok) return alert(actionError(result));
     alert(result.success ? 'Disiscrizione completata.' : `Disiscrizione non riuscita (status ${result.status}).`);
   }
 
@@ -165,6 +177,7 @@ document.addEventListener('click', async (e) => {
     if (!confirmed) return;
     const res = await fetch(`/api/senders/${encodeURIComponent(email)}/trash`, { method: 'POST' });
     const result = await res.json();
+    if (!res.ok) return alert(actionError(result));
     if (result.failed > 0) {
       alert(`Operazione parziale: ${result.succeeded} riuscite, ${result.failed} fallite su ${result.total}.`);
     } else {

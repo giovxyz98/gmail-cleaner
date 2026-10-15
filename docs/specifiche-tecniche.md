@@ -84,6 +84,7 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 ## Gestione errori
 
 - Lo stato dell'analisi (`idle` / `listing` / `fetching` / `done` / `error`) e i contatori `processed`/`total` sono esposti da un endpoint di stato e interrogati dal frontend con polling.
+- Le route `/api/senders/:email/...` validano il formato dell'email (400 `invalid_email`), cercano il mittente nell'analisi corrente (404 `sender_not_found`) e permettono **una sola operazione per mittente alla volta** (409 `operation_in_progress`). Durante un'analisi le azioni sono bloccate (409 `analysis_in_progress`) e, viceversa, l'analisi non parte se c'è un'operazione in corso.
 - Le azioni di pulizia restituiscono sempre `total`/`succeeded`/`failed`/`errors`: un'operazione parziale non viene mai riportata come completata.
 
 ## API interna

@@ -37,9 +37,12 @@ app.get('/auth/google/callback', async (req, res) => {
 });
 
 let analysisRunning = false;
+// Un'operazione alla volta per mittente; nessuna operazione mentre l'analisi ricostruisce i gruppi.
+const busySenders = new Set();
 
 app.post('/api/analyze', requireAuth, (req, res) => {
   if (analysisRunning) return res.status(409).json({ error: 'analysis_in_progress' });
+  if (busySenders.size > 0) return res.status(409).json({ error: 'operation_in_progress' });
   analysisRunning = true;
   runAnalysis(getGmailClient())
     .catch(() => {})
@@ -57,21 +60,53 @@ app.get('/api/senders', requireAuth, (req, res) => {
   res.json(getSenders(req.query.sort));
 });
 
+const EMAIL_PATTERN = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]+$/;
+
+// Valida il mittente della route e riserva l'operazione. Restituisce il gruppo, oppure null dopo aver risposto.
+function acquireSender(req, res) {
+  const email = req.params.email;
+  if (email.length > 320 || !EMAIL_PATTERN.test(email)) {
+    res.status(400).json({ error: 'invalid_email' });
+    return null;
+  }
+  if (analysisRunning) {
+    res.status(409).json({ error: 'analysis_in_progress' });
+    return null;
+  }
+  const group = getSenderGroup(email.toLowerCase());
+  if (!group) {
+    res.status(404).json({ error: 'sender_not_found' });
+    return null;
+  }
+  if (busySenders.has(group.email)) {
+    res.status(409).json({ error: 'operation_in_progress' });
+    return null;
+  }
+  busySenders.add(group.email);
+  return group;
+}
+
 app.post('/api/senders/:email/unsubscribe', requireAuth, async (req, res) => {
-  const group = getSenderGroup(decodeURIComponent(req.params.email));
-  if (!group) return res.status(404).json({ error: 'sender_not_found' });
-  if (group.unsubscribe.type !== 'one-click') return res.status(400).json({ error: 'not_one_click' });
+  const group = acquireSender(req, res);
+  if (!group) return;
   try {
+    if (group.unsubscribe.type !== 'one-click') return res.status(400).json({ error: 'not_one_click' });
     res.json(await unsubscribeOneClick(group.unsubscribe.url));
   } catch (err) {
     res.status(502).json({ error: 'unsubscribe_failed', message: err.message });
+  } finally {
+    busySenders.delete(group.email);
   }
 });
 
 app.post('/api/senders/:email/trash', requireAuth, async (req, res) => {
-  const group = getSenderGroup(decodeURIComponent(req.params.email));
-  if (!group) return res.status(404).json({ error: 'sender_not_found' });
-  res.json(await trashMessages(getGmailClient(), group.messageIds));
+  const group = acquireSender(req, res);
+  if (!group) return;
+  try {
+    res.json(await trashMessages(getGmailClient(), group.messageIds));
+  } finally {
+    busySenders.delete(group.email);
+  }
 });
 
 app.listen(config.port, '127.0.0.1', () => {
