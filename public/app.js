@@ -22,13 +22,28 @@ async function init() {
     authArea.innerHTML = '<a href="/auth/google"><button>Collega account Google</button></a>';
     return;
   }
-  authArea.textContent = email ? `Collegato come ${email}` : 'Account collegato';
+  authArea.textContent = email ? `Collegato come ${email} ` : 'Account collegato ';
+  const logoutBtn = document.createElement('button');
+  logoutBtn.className = 'secondary';
+  logoutBtn.textContent = 'Scollega / cambia account';
+  logoutBtn.addEventListener('click', logout);
+  authArea.append(logoutBtn);
   document.getElementById('analyze-area').hidden = false;
   document.getElementById('analyze-btn').addEventListener('click', startAnalysis);
   document.getElementById('sort-select').addEventListener('change', (e) => {
     state.sort = e.target.value;
     loadSenders();
   });
+}
+
+async function logout() {
+  const confirmed = await showModal(
+    "Verrà revocato l'accesso di Gmail Cleaner a questo account e cancellati i risultati dell'analisi. Poi potrai collegare un altro account. Continuare?"
+  );
+  if (!confirmed) return;
+  const res = await fetch('/api/logout', { method: 'POST' });
+  if (!res.ok) return alert(actionError(await res.json()));
+  location.reload();
 }
 
 async function startAnalysis() {

@@ -136,6 +136,12 @@ const SORTERS = {
 };
 const SORT_KEYS = Object.keys(SORTERS);
 
+// Dimentica i risultati dell'analisi (per esempio quando si scollega l'account).
+function clearAnalysis() {
+  resetAnalysisState();
+  analysisState.status = 'idle';
+}
+
 function getSenders(sort) {
   const groups = Array.from(senderGroups.values()).map((g) => ({
     email: g.email,
@@ -156,4 +162,4 @@ function getSenderGroup(email) {
   return senderGroups.get(email);
 }
 
-module.exports = { analysisState, runAnalysis, getSenders, getSenderGroup, SORT_KEYS };
+module.exports = { analysisState, runAnalysis, clearAnalysis, getSenders, getSenderGroup, SORT_KEYS };

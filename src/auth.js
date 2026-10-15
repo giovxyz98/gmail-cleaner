@@ -107,6 +107,19 @@ function clearAuth() {
   oauth2Client = null;
 }
 
+// Scollega l'account: revoca l'accesso presso Google (se possibile) e dimentica il token locale.
+async function logout() {
+  const refreshToken = loadToken()?.refresh_token;
+  if (refreshToken) {
+    try {
+      await getAuthClient().revokeToken(refreshToken);
+    } catch (err) {
+      console.warn(`Revoca presso Google non riuscita: ${err.message}`);
+    }
+  }
+  clearAuth();
+}
+
 function getAccountEmail() {
   return loadToken()?.email || null;
 }
@@ -115,4 +128,4 @@ function getGmailClient() {
   return google.gmail({ version: 'v1', auth: getAuthClient() });
 }
 
-module.exports = { getAuthUrl, handleCallback, isAuthenticated, isAuthError, clearAuth, getAccountEmail, getGmailClient };
+module.exports = { getAuthUrl, handleCallback, isAuthenticated, isAuthError, clearAuth, logout, getAccountEmail, getGmailClient };

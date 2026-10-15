@@ -4,6 +4,9 @@ Tutte le modifiche rilevanti al progetto. Formato ispirato a [Keep a Changelog](
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Pulsante "Scollega / cambia account": revoca l'accesso presso Google, cancella il token locale e i risultati dell'analisi, poi riporta al login (`POST /api/logout`).
+
 ### Modificato
 - Il login Google chiede sempre di scegliere l'account (`select_account`), invece di usare il primo disponibile nel browser.
 

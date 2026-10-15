@@ -6,10 +6,11 @@ const {
   isAuthenticated,
   isAuthError,
   clearAuth,
+  logout,
   getAccountEmail,
   getGmailClient,
 } = require('./auth');
-const { analysisState, runAnalysis, getSenders, getSenderGroup, SORT_KEYS } = require('./analysis');
+const { analysisState, runAnalysis, clearAnalysis, getSenders, getSenderGroup, SORT_KEYS } = require('./analysis');
 const { trashMessages, unsubscribeOneClick } = require('./actions');
 const { localGuard } = require('./security');
 
@@ -41,6 +42,18 @@ app.get('/auth/google/callback', async (req, res) => {
   } catch (err) {
     console.error(`Errore durante l'autenticazione: ${err.message}`);
     res.status(400).send("Autenticazione non riuscita. Torna all'app e riprova.");
+  }
+});
+
+app.post('/api/logout', async (req, res, next) => {
+  if (analysisRunning) return res.status(409).json({ error: 'analysis_in_progress' });
+  if (busySenders.size > 0) return res.status(409).json({ error: 'operation_in_progress' });
+  try {
+    await logout();
+    clearAnalysis();
+    res.json({ loggedOut: true });
+  } catch (err) {
+    next(err);
   }
 });
 

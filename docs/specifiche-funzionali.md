@@ -6,7 +6,7 @@ Un'app che gira sul computer e serve a ripulire una casella Gmail piena di anni 
 
 ## Collegamento dell'account
 
-Al primo avvio si collega un account Gmail tramite il login Google. Dopo il primo accesso l'app resta collegata e non chiede più di rifare il login. Se l'accesso viene revocato dall'account Google (o scade), l'app lo riconosce e propone di collegare di nuovo l'account.
+Al primo avvio si collega un account Gmail tramite il login Google. Dopo il primo accesso l'app resta collegata e non chiede più di rifare il login. Se l'accesso viene revocato dall'account Google (o scade), l'app lo riconosce e propone di collegare di nuovo l'account. Per usare un altro account c'è il pulsante "Scollega / cambia account", che revoca l'accesso e cancella i risultati dell'analisi; al nuovo login Google fa scegliere l'account.
 
 ## Analisi della casella
 

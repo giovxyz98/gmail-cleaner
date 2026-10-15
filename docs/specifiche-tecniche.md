@@ -103,6 +103,7 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 - `GET /api/status` — stato dell'autenticazione e indirizzo dell'account collegato.
 - `GET /auth/google` — avvia il flusso OAuth.
 - `GET /auth/google/callback` — riceve il `code`, scambia il token, lo salva.
+- `POST /api/logout` — revoca il token presso Google (se possibile), cancella `data/token.json` e i risultati dell'analisi. Rifiutata (409) se c'è un'analisi o un'operazione in corso.
 - `POST /api/analyze` — avvia l'analisi in background (se già in corso, risponde 409).
 - `GET /api/analyze/status` — stato e avanzamento dell'analisi.
 - `GET /api/senders?sort=...` — elenco mittenti, ordinato.
