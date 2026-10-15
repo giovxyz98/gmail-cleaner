@@ -25,7 +25,7 @@ Documento complementare alle [specifiche funzionali](specifiche-funzionali.md): 
 | `public/index.html` | Struttura della pagina. |
 | `public/style.css` | Stile. |
 | `public/app.js` | Logica del frontend: polling, tabella, conferme, chiamate alle route interne. |
-| `data/` | Dati locali generati a runtime (`token.json`), esclusi da git. |
+| `data/` | Dati locali generati a runtime (`token.json`, copie di debug `analisi_*.json`), esclusi da git. |
 
 Le dipendenze vanno in una sola direzione: `server` → `analysis` / `actions` / `auth` → `retry` / `parsers` / `config`.
 
@@ -92,6 +92,7 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 
 ## Gestione errori
 
+- Ogni analisi, comunque finisca (`done`, `partial` o `error`), scrive una copia di debug in `data/analisi_AAAA-MM-GG_HH-MM-SS.json`: data di salvataggio, account, stato e contatori, mittenti con ID dei messaggi, `failures` (ID e motivo, max 200) e `skippedNoSender` (ID e `From` grezzo, max 200). Si conservano le ultime 20. Il file contiene indirizzi di mittenti: resta locale (`data/` è in `.gitignore`) e non va condiviso. Non è una cache: l'app non lo rilegge.
 - Un unico middleware Express risponde agli errori non gestiti: 401 per i problemi di autenticazione, 400 `bad_request` per richieste malformate, 500 `internal_error` per il resto. Il dettaglio finisce solo nel log del server, mai nella risposta (niente stack trace).
 - `GET /api/senders?sort=` accetta solo `count`, `lastDate`, `firstDate`, `name`, `email`; altri valori ricevono 400 `invalid_sort`.
 - Lo stato dell'analisi (`idle` / `listing` / `fetching` / `done` / `partial` / `error`) e i contatori `processed`, `total`, `failed`, `skipped` sono esposti da un endpoint di stato e interrogati dal frontend con polling. `done` significa che ogni messaggio è stato letto; `partial` che alcuni (`failed`) non sono stati letti, e il frontend lo segnala come analisi incompleta; `error` che l'analisi si è interrotta.

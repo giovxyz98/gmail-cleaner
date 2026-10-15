@@ -5,6 +5,7 @@ Tutte le modifiche rilevanti al progetto. Formato ispirato a [Keep a Changelog](
 ## [Non rilasciato]
 
 ### Aggiunto
+- Copia di debug di ogni analisi in `data/analisi_AAAA-MM-GG_HH-MM-SS.json` (stato, mittenti con ID dei messaggi, messaggi falliti col motivo, messaggi senza mittente valido con l'header `From` grezzo). Si tengono le ultime 20; `data/` è escluso da git.
 - Pulsante "Scollega / cambia account": revoca l'accesso presso Google, cancella il token locale e i risultati dell'analisi, poi riporta al login (`POST /api/logout`).
 
 ### Modificato

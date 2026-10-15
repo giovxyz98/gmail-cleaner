@@ -26,7 +26,7 @@ Il token OAuth viene salvato in `data/token.json` e riusato ai riavvii successiv
 src/      backend Node.js (un modulo per responsabilità)
 public/   frontend: index.html, style.css, app.js
 docs/     documentazione
-data/     token OAuth (generato al primo login, escluso da git)
+data/     token OAuth e copie di debug delle analisi (generati a runtime, esclusi da git)
 config.json           credenziali locali (escluso da git)
 config.example.json   modello di configurazione
 ```

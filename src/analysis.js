@@ -1,7 +1,9 @@
+const fs = require('fs');
+const path = require('path');
 const pLimit = require('p-limit');
 const { withRetry } = require('./retry');
-const { config } = require('./config');
-const { isAuthError } = require('./auth');
+const { config, DATA_DIR } = require('./config');
+const { isAuthError, getAccountEmail } = require('./auth');
 const { parseFrom, resolveUnsubscribeMethod, headerValue } = require('./parsers');
 
 const METADATA_HEADERS = ['From', 'Date', 'Subject', 'List-Unsubscribe', 'List-Unsubscribe-Post', 'List-ID'];
@@ -11,6 +13,13 @@ const METADATA_HEADERS = ['From', 'Date', 'Subject', 'List-Unsubscribe', 'List-U
 const analysisState = { status: 'idle', processed: 0, total: 0, failed: 0, skipped: 0, error: null };
 
 const FAILURE_ABORT_MIN = 50;
+
+// Copia di debug di ogni analisi in data/ (esclusa da git): i fallimenti e i messaggi ignorati sono registrati qui,
+// non esposti dall'API. Si tengono le ultime SNAPSHOT_KEEP analisi.
+const SNAPSHOT_PREFIX = 'analisi_';
+const SNAPSHOT_KEEP = 20;
+const DEBUG_LIST_LIMIT = 200;
+let debugInfo = { failures: [], skippedNoSender: [] };
 let senderGroups = new Map();
 
 function resetAnalysisState() {
@@ -21,6 +30,7 @@ function resetAnalysisState() {
   analysisState.skipped = 0;
   analysisState.error = null;
   senderGroups = new Map();
+  debugInfo = { failures: [], skippedNoSender: [] };
 }
 
 function ingestMessage(message) {
@@ -87,6 +97,36 @@ async function fetchMessageMetadata(gmail, id) {
   return res.data;
 }
 
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+function saveSnapshot() {
+  try {
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const snapshot = {
+      savedAt: d.toISOString(),
+      account: getAccountEmail(),
+      state: { ...analysisState },
+      senders: Array.from(senderGroups.values()).sort((a, b) => b.count - a.count),
+      failures: debugInfo.failures,
+      skippedNoSender: debugInfo.skippedNoSender,
+    };
+    fs.writeFileSync(path.join(DATA_DIR, `${SNAPSHOT_PREFIX}${stamp}.json`), JSON.stringify(snapshot, null, 2), 'utf8');
+
+    const old = fs
+      .readdirSync(DATA_DIR)
+      .filter((f) => f.startsWith(SNAPSHOT_PREFIX) && f.endsWith('.json'))
+      .sort()
+      .slice(0, -SNAPSHOT_KEEP);
+    for (const f of old) fs.unlinkSync(path.join(DATA_DIR, f));
+  } catch (err) {
+    console.warn(`Impossibile salvare la copia di debug dell'analisi: ${err.message}`);
+  }
+}
+
 async function runAnalysis(gmail) {
   resetAnalysisState();
   try {
@@ -102,11 +142,17 @@ async function runAnalysis(gmail) {
           if (aborted) return;
           try {
             const message = await fetchMessageMetadata(gmail, id);
-            if (!ingestMessage(message)) analysisState.skipped += 1;
+            if (!ingestMessage(message)) {
+              analysisState.skipped += 1;
+              if (debugInfo.skippedNoSender.length < DEBUG_LIST_LIMIT) {
+                debugInfo.skippedNoSender.push({ id, from: headerValue(message.payload?.headers || [], 'From') });
+              }
+            }
           } catch (err) {
             // Un messaggio che fallisce viene saltato e contato; si interrompe solo se la sessione non è più valida
             // o se i fallimenti superano i successi (problema di rete o di quota, non di un singolo messaggio).
             analysisState.failed += 1;
+            if (debugInfo.failures.length < DEBUG_LIST_LIMIT) debugInfo.failures.push({ id, error: err.message || String(err) });
             if (isAuthError(err) || (analysisState.failed >= FAILURE_ABORT_MIN && analysisState.failed > analysisState.processed / 2)) {
               aborted = true;
               throw err;
@@ -124,6 +170,8 @@ async function runAnalysis(gmail) {
       ? "Sessione Google scaduta o revocata: collega di nuovo l'account."
       : err.message || String(err);
     throw err;
+  } finally {
+    saveSnapshot();
   }
 }
 
