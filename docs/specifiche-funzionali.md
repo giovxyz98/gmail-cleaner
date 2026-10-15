@@ -42,10 +42,10 @@ Prima di eseguire l'azione l'app indica sempre quale metodo userà.
 
 Due azioni distinte per ogni mittente:
 
-- **Sposta nel Cestino** — tutte le email di quel mittente finiscono nel Cestino e restano recuperabili.
-- **Elimina definitivamente** — le email vengono cancellate senza possibilità di recupero.
+- **Sposta nel Cestino** — tutte le email di quel mittente finiscono nel Cestino e restano recuperabili. *Disponibile.*
+- **Elimina definitivamente** — le email vengono cancellate senza possibilità di recupero. *Non ancora disponibile: è in [roadmap](roadmap.md) e richiede un permesso Google più ampio.*
 
-Entrambe chiedono conferma, una alla volta, sul singolo mittente, indicando quante email sono coinvolte. Su un mittente si può eseguire una sola azione alla volta, e nessuna azione parte mentre è in corso un'analisi. Non esiste una conferma unica che agisce su più mittenti insieme: è l'unico modo per non svuotare per sbaglio mezza casella.
+Le azioni chiedono conferma, una alla volta, sul singolo mittente, indicando quante email sono coinvolte. Su un mittente si può eseguire una sola azione alla volta, e nessuna azione parte mentre è in corso un'analisi. Non esiste una conferma unica che agisce su più mittenti insieme: è l'unico modo per non svuotare per sbaglio mezza casella.
 
 ## Esito delle operazioni
 
