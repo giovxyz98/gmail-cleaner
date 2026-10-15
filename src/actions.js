@@ -1,4 +1,5 @@
 const { withRetry } = require('./retry');
+const { safePost } = require('./netguard');
 
 function chunk(array, size) {
   const chunks = [];
@@ -26,12 +27,10 @@ async function trashMessages(gmail, messageIds) {
 }
 
 async function unsubscribeOneClick(url) {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'List-Unsubscribe=One-Click',
+  const { status } = await safePost(url, 'List-Unsubscribe=One-Click', {
+    'Content-Type': 'application/x-www-form-urlencoded',
   });
-  return { success: response.ok, status: response.status };
+  return { success: status >= 200 && status < 300, status };
 }
 
 module.exports = { trashMessages, unsubscribeOneClick };

@@ -147,9 +147,11 @@ const ACTION_ERRORS = {
   operation_in_progress: "Un'altra operazione su questo mittente è già in corso.",
   sender_not_found: "Mittente non trovato nell'analisi corrente: rifai l'analisi.",
   not_one_click: 'Questo mittente non supporta la disiscrizione One-Click.',
+  unsubscribe_failed: 'Disiscrizione non eseguita: la destinazione non è raggiungibile o non è ammessa.',
 };
 
 function actionError(result) {
+  if (result.error === 'unsubscribe_failed' && result.message) return `Disiscrizione non eseguita: ${result.message}`;
   return ACTION_ERRORS[result.error] || `Operazione non riuscita (${result.error || 'errore sconosciuto'}).`;
 }
 

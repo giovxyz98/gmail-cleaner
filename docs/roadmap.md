@@ -22,7 +22,7 @@ Da fare **prima di usare l'app su una casella reale**, in quest'ordine (dettagli
 
 - [x] Server locale: ascolto su `127.0.0.1`, controllo Host/Origin, parametro `state` nell'OAuth.
 - [x] Pulizia: niente richieste duplicate o concorrenti, numero di messaggi nel modale, validazione dell'email.
-- [ ] One-Click: solo HTTPS, blocco IP privati, niente redirect, timeout e limite di risposta.
+- [x] One-Click: solo HTTPS, blocco IP privati, niente redirect, timeout e limite di risposta.
 - [ ] OAuth ed errori: gestione revoca/`invalid_grant`, middleware errori, `sort` validato.
 - [ ] Caselle grandi e parsing: messaggi che falliscono saltati e contati, concorrenza configurabile, `From` non valido gestito.
 

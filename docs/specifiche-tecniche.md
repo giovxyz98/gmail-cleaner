@@ -18,6 +18,7 @@ Documento complementare alle [specifiche funzionali](specifiche-funzionali.md): 
 | `src/security.js` | Guardia delle richieste: controllo di `Host` e `Origin` (anti CSRF e DNS rebinding). |
 | `src/auth.js` | OAuth2: client, salvataggio e refresh del token, client Gmail autenticato. |
 | `src/analysis.js` | Scansione della casella, raggruppamento per mittente, stato dell'analisi, ordinamento. |
+| `src/netguard.js` | Richieste HTTPS in uscita sicure per la disiscrizione One-Click (blocco IP non pubblici, timeout, niente redirect). |
 | `src/actions.js` | Azioni sulla casella: spostamento nel Cestino, disiscrizione One-Click. |
 | `src/parsers.js` | Funzioni pure sugli header (`From`, `List-Unsubscribe`). |
 | `src/retry.js` | Retry con backoff esponenziale sugli errori di quota. |
@@ -58,6 +59,10 @@ Le dipendenze vanno in una sola direzione: `server` → `analysis` / `actions` /
 Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo disponibile.
 
 - **One-Click**: `List-Unsubscribe` con URL http/https + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` → il backend esegue un POST conforme a RFC 8058 (`Content-Type: application/x-www-form-urlencoded`, body `List-Unsubscribe=One-Click`).
+  - Il metodo è One-Click solo se l'URL è `https`; un URL `http` con `List-Unsubscribe-Post` resta un link manuale.
+  - La richiesta (`src/netguard.js`) rifiuta URL non HTTPS o con credenziali, e indirizzi locali, privati o riservati (loopback, RFC 1918, link-local, CGNAT, multicast, `fc00::/7`, `fe80::/10`, IPv4 mappato in IPv6...). Il controllo sugli IP è fatto dal `lookup` DNS usato per la connessione, quindi vale per l'indirizzo a cui ci si connette davvero (nessun DNS rebinding).
+  - Nessun redirect seguito; timeout complessivo di 10 s; risposta letta al massimo per 64 KB. Il successo è uno status 2xx.
+  - Un errore di rete o un URL non ammesso fa fallire solo quel mittente (502 `unsubscribe_failed`).
 - **HTTPS senza One-Click**: il link viene restituito al frontend per apertura manuale. Nessuna richiesta automatica.
 - **mailto**: l'indirizzo viene restituito al frontend, apertura manuale.
 

@@ -19,7 +19,7 @@ function parseListUnsubscribe(value) {
 
 function resolveUnsubscribeMethod(listUnsubscribe, listUnsubscribePost) {
   const { url, mailto } = parseListUnsubscribe(listUnsubscribe);
-  const isOneClick = Boolean(url && listUnsubscribePost && /one-click/i.test(listUnsubscribePost));
+  const isOneClick = Boolean(url && /^https:\/\//i.test(url) && listUnsubscribePost && /one-click/i.test(listUnsubscribePost));
   if (isOneClick) return { type: 'one-click', url, mailto: null };
   if (url) return { type: 'https', url, mailto: null };
   if (mailto) return { type: 'mailto', url: null, mailto };
