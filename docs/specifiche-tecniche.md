@@ -47,11 +47,14 @@ Le dipendenze vanno in una sola direzione: `server` → `analysis` / `actions` /
 - `messages.list` restituisce solo `id` e `threadId`: per gli header serve `users.messages.get` con `format=metadata` e `metadataHeaders`, una chiamata per messaggio.
 - Header recuperati: `From`, `Date`, `Subject`, `List-Unsubscribe`, `List-Unsubscribe-Post`, `List-ID`, più `id`, `threadId`, `labelIds`, `internalDate`.
 - Il body non viene richiesto in fase di analisi.
-- Le chiamate di dettaglio vengono eseguite con concorrenza limitata (10 richieste parallele) per non saturare la quota.
+- Le chiamate di dettaglio vengono eseguite con concorrenza limitata per non saturare la quota: `concurrency` in `config.json` (intero da 1 a 50, predefinito 10).
+- **Messaggi inclusi**: tutti, compresi Spam e Cestino (`includeSpamTrash: true`). Le email nel Cestino compaiono nel loro gruppo con il conteggio `trashCount`.
+- Un messaggio la cui lettura fallisce (dopo i retry) viene saltato e contato in `failed`. L'analisi si interrompe solo se la sessione Google non è più valida o se i fallimenti sono almeno 50 e superano la metà dei messaggi gestiti (problema generale di rete o quota).
 
 ## Raggruppamento
 
-- Chiave: indirizzo email del mittente, estratto dall'header `From` (formato `"Nome" <email>` o indirizzo semplice) e normalizzato in minuscolo.
+- Chiave: indirizzo email del mittente, estratto dall'header `From` e normalizzato in minuscolo. Il parser (`src/parsers.js`, senza librerie esterne) gestisce `"Nome" <email>`, `Nome <email>`, indirizzo semplice, `email (Nome)`, nomi tra virgolette con virgole o escape e nomi codificati RFC 2047 (`=?UTF-8?B?...?=`, `=?UTF-8?Q?...?=`, anche in più parti consecutive). Con più indirizzi vale il primo.
+- Un messaggio con `From` assente o senza un indirizzo valido (per esempio `undisclosed-recipients:;`) non viene raggruppato: è contato in `skipped` e non finisce mai sotto una chiave sbagliata.
 - Per ciascun gruppo vengono mantenuti: conteggio totale, prima e ultima data (da `internalDate`), conteggio messaggi con label `INBOX`/`SPAM`/`TRASH`, e la lista degli id messaggio (necessaria per eseguire le azioni di pulizia).
 - Nome mittente e metodo di disiscrizione vengono aggiornati ogni volta che si incontra, nel gruppo, un messaggio più recente di quello visto finora.
 
@@ -91,7 +94,7 @@ Priorità: One-Click HTTPS → HTTPS manuale → mailto → nessun metodo dispon
 
 - Un unico middleware Express risponde agli errori non gestiti: 401 per i problemi di autenticazione, 400 `bad_request` per richieste malformate, 500 `internal_error` per il resto. Il dettaglio finisce solo nel log del server, mai nella risposta (niente stack trace).
 - `GET /api/senders?sort=` accetta solo `count`, `lastDate`, `firstDate`, `name`, `email`; altri valori ricevono 400 `invalid_sort`.
-- Lo stato dell'analisi (`idle` / `listing` / `fetching` / `done` / `error`) e i contatori `processed`/`total` sono esposti da un endpoint di stato e interrogati dal frontend con polling.
+- Lo stato dell'analisi (`idle` / `listing` / `fetching` / `done` / `partial` / `error`) e i contatori `processed`, `total`, `failed`, `skipped` sono esposti da un endpoint di stato e interrogati dal frontend con polling. `done` significa che ogni messaggio è stato letto; `partial` che alcuni (`failed`) non sono stati letti, e il frontend lo segnala come analisi incompleta; `error` che l'analisi si è interrotta.
 - Le route `/api/senders/:email/...` validano il formato dell'email (400 `invalid_email`), cercano il mittente nell'analisi corrente (404 `sender_not_found`) e permettono **una sola operazione per mittente alla volta** (409 `operation_in_progress`). Durante un'analisi le azioni sono bloccate (409 `analysis_in_progress`) e, viceversa, l'analisi non parte se c'è un'operazione in corso.
 - Le azioni di pulizia restituiscono sempre `total`/`succeeded`/`failed`/`errors`: un'operazione parziale non viene mai riportata come completata.
 

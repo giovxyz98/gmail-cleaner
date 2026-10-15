@@ -1,8 +1,50 @@
+const ADDRESS_PATTERN = /^[^\s@<>()",;:\\]+@[^\s@<>()",;:\\]+\.[^\s@<>()",;:\\]+$/;
+
+function decodeEncodedWord(charset, encoding, text) {
+  try {
+    const bytes =
+      encoding.toUpperCase() === 'B'
+        ? Buffer.from(text, 'base64')
+        : Buffer.from(
+            text.replace(/_/g, ' ').replace(/=([0-9A-F]{2})/gi, (m, hex) => String.fromCharCode(parseInt(hex, 16))),
+            'latin1'
+          );
+    return new TextDecoder(charset.replace(/\*.*$/, '')).decode(bytes);
+  } catch (err) {
+    return null;
+  }
+}
+
+// Decodifica le parole codificate degli header (RFC 2047), per esempio =?UTF-8?B?...?= o =?UTF-8?Q?...?=.
+function decodeEncodedWords(text) {
+  return text
+    .replace(/(=\?[^?\s]+\?[BbQq]\?[^?\s]*\?=)\s+(?==\?)/g, '$1')
+    .replace(/=\?([^?\s]+)\?([BbQq])\?([^?\s]*)\?=/g, (match, charset, encoding, body) => {
+      const decoded = decodeEncodedWord(charset, encoding, body);
+      return decoded === null ? match : decoded;
+    });
+}
+
+// Restituisce { name, email }. Con un header assente o senza un indirizzo valido l'email è vuota:
+// il chiamante deve scartare il messaggio invece di raggrupparlo sotto una chiave sbagliata.
 function parseFrom(raw) {
   if (!raw) return { name: '', email: '' };
-  const match = raw.match(/^"?([^"<]*)"?\s*<([^>]+)>$/);
-  if (match) return { name: match[1].trim(), email: match[2].trim().toLowerCase() };
-  return { name: raw.trim(), email: raw.trim().toLowerCase() };
+
+  let name = '';
+  let address = '';
+  const angle = raw.match(/^\s*(.*?)\s*<\s*([^<>]*?)\s*>/);
+  if (angle) {
+    name = angle[1];
+    address = angle[2];
+  } else {
+    const comment = raw.match(/\(([^)]*)\)/);
+    name = comment ? comment[1] : '';
+    address = raw.replace(/\([^)]*\)/g, ' ').split(',')[0].trim();
+  }
+
+  name = name.trim().replace(/^"(.*)"$/, '$1').replace(/\\(.)/g, '$1').trim();
+  const email = address.trim().toLowerCase();
+  return { name: decodeEncodedWords(name), email: ADDRESS_PATTERN.test(email) ? email : '' };
 }
 
 function parseListUnsubscribe(value) {

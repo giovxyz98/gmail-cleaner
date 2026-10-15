@@ -57,8 +57,12 @@ async function pollProgress() {
     const pct = s.total ? Math.round((s.processed / s.total) * 100) : 0;
     text.textContent = `Elaborate ${s.processed} di ${s.total} email`;
     fill.style.width = `${pct}%`;
-  } else if (s.status === 'done') {
-    text.textContent = `Analisi completata: ${s.processed} email elaborate`;
+  } else if (s.status === 'done' || s.status === 'partial') {
+    const skipped = s.skipped ? ` (${s.skipped} senza mittente valido, ignorate)` : '';
+    text.textContent =
+      s.status === 'done'
+        ? `Analisi completata: ${s.processed} email elaborate${skipped}`
+        : `Analisi INCOMPLETA: ${s.failed} email su ${s.total} non lette, l'elenco è parziale${skipped}. Rilancia l'analisi.`;
     fill.style.width = '100%';
     document.getElementById('analyze-btn').disabled = false;
     loadSenders();

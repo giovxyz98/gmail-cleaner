@@ -1,17 +1,24 @@
 const pLimit = require('p-limit');
 const { withRetry } = require('./retry');
+const { config } = require('./config');
 const { isAuthError } = require('./auth');
 const { parseFrom, resolveUnsubscribeMethod, headerValue } = require('./parsers');
 
 const METADATA_HEADERS = ['From', 'Date', 'Subject', 'List-Unsubscribe', 'List-Unsubscribe-Post', 'List-ID'];
 
-const analysisState = { status: 'idle', processed: 0, total: 0, error: null };
+// Stati: idle, listing, fetching, done (completa), partial (alcuni messaggi non letti), error.
+// processed conta ogni messaggio gestito (letto, saltato o fallito); failed = non letti; skipped = senza mittente valido.
+const analysisState = { status: 'idle', processed: 0, total: 0, failed: 0, skipped: 0, error: null };
+
+const FAILURE_ABORT_MIN = 50;
 let senderGroups = new Map();
 
 function resetAnalysisState() {
   analysisState.status = 'listing';
   analysisState.processed = 0;
   analysisState.total = 0;
+  analysisState.failed = 0;
+  analysisState.skipped = 0;
   analysisState.error = null;
   senderGroups = new Map();
 }
@@ -20,7 +27,7 @@ function ingestMessage(message) {
   const headers = message.payload?.headers || [];
   const fromRaw = headerValue(headers, 'From');
   const { name, email } = parseFrom(fromRaw);
-  if (!email) return;
+  if (!email) return false;
 
   const listUnsubscribe = headerValue(headers, 'List-Unsubscribe');
   const listUnsubscribePost = headerValue(headers, 'List-Unsubscribe-Post');
@@ -56,6 +63,7 @@ function ingestMessage(message) {
   if (labelIds.includes('INBOX')) group.inboxCount += 1;
   if (labelIds.includes('SPAM')) group.spamCount += 1;
   if (labelIds.includes('TRASH')) group.trashCount += 1;
+  return true;
 }
 
 async function listAllMessageIds(gmail) {
@@ -86,18 +94,30 @@ async function runAnalysis(gmail) {
     analysisState.total = ids.length;
     analysisState.status = 'fetching';
 
-    const limit = pLimit(10);
+    const limit = pLimit(config.concurrency);
+    let aborted = false;
     await Promise.all(
       ids.map((id) =>
         limit(async () => {
-          const message = await fetchMessageMetadata(gmail, id);
-          ingestMessage(message);
+          if (aborted) return;
+          try {
+            const message = await fetchMessageMetadata(gmail, id);
+            if (!ingestMessage(message)) analysisState.skipped += 1;
+          } catch (err) {
+            // Un messaggio che fallisce viene saltato e contato; si interrompe solo se la sessione non è più valida
+            // o se i fallimenti superano i successi (problema di rete o di quota, non di un singolo messaggio).
+            analysisState.failed += 1;
+            if (isAuthError(err) || (analysisState.failed >= FAILURE_ABORT_MIN && analysisState.failed > analysisState.processed / 2)) {
+              aborted = true;
+              throw err;
+            }
+          }
           analysisState.processed += 1;
         })
       )
     );
 
-    analysisState.status = 'done';
+    analysisState.status = analysisState.failed > 0 ? 'partial' : 'done';
   } catch (err) {
     analysisState.status = 'error';
     analysisState.error = isAuthError(err)

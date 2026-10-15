@@ -2,5 +2,6 @@
   "googleClientId": "",
   "googleClientSecret": "",
   "googleRedirectUri": "http://localhost:3000/auth/google/callback",
-  "port": 3000
+  "port": 3000,
+  "concurrency": 10
 }

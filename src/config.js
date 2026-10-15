@@ -11,6 +11,7 @@ function loadConfig() {
   const raw = fs.readFileSync(CONFIG_PATH, 'utf8');
   const parsed = JSON.parse(raw);
   parsed.port = parsed.port || 3000;
+  parsed.concurrency = Number.isInteger(parsed.concurrency) && parsed.concurrency >= 1 && parsed.concurrency <= 50 ? parsed.concurrency : 10;
   parsed.googleRedirectUri = parsed.googleRedirectUri || `http://localhost:${parsed.port}/auth/google/callback`;
   return parsed;
 }

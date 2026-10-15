@@ -24,7 +24,7 @@ Da fare **prima di usare l'app su una casella reale**, in quest'ordine (dettagli
 - [x] Pulizia: niente richieste duplicate o concorrenti, numero di messaggi nel modale, validazione dell'email.
 - [x] One-Click: solo HTTPS, blocco IP privati, niente redirect, timeout e limite di risposta.
 - [x] OAuth ed errori: gestione revoca/`invalid_grant`, middleware errori, `sort` validato.
-- [ ] Caselle grandi e parsing: messaggi che falliscono saltati e contati, concorrenza configurabile, `From` non valido gestito.
+- [x] Caselle grandi e parsing: messaggi che falliscono saltati e contati, concorrenza configurabile, `From` non valido gestito.
 
 ## Funzionalità future
 
